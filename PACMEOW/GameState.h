@@ -1,5 +1,6 @@
 #pragma once
 #include <SFML\Graphics.hpp>
+#include <SFML\Audio.hpp>
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -47,9 +48,13 @@ public:
 	void UpdateMonster(float deltaTime);
 	void UpdateFood();
 	void UpdateEmotion(int curEmo);
-
+	void UpdateStatus();
+	void initStatus();
+	//void initTaskbar();
+	//void DrawTaskbar(sf::RenderWindow& window);
 	void NextLevel();
 	int pause = false;
+	unsigned long score, checkScore;
 private:
 	sf::Texture playerTexture;
 	sf::Texture monsterTexture;
@@ -62,7 +67,6 @@ private:
 	Player* player;
 	Monster* monster;
 	Emotion* emotion;
-	sf::RectangleShape status;
 	sf::Texture heartTexture;
 	std::vector<sf::Sprite> heart{ MAX_HEART };
 	sf::Text textScore;
@@ -71,7 +75,6 @@ private:
 	sf::Sprite background;
 	char writeName[20];
 	unsigned long writeScore;
-	unsigned long score, checkScore;
 
 
 	int row;
@@ -81,11 +84,21 @@ private:
 	sf::Clock countTimeMonster;
 	bool startCountTimeMonster;
 	sf::Clock countTimeSpeed;
+	sf::Clock countTimeScore;
 	bool startScoreBoost;
 	int countFood[9] = {};
 	int scoreBoost = 1;
 	int health;
 	int currentEmotion;
+	float startSpeedMonster = 20;
 
+	//sf::RectangleShape taskbar;
+	sf::Music effHit;
+	sf::Music effItem;
+	sf::Music effBadItem;
+	sf::Music effDead;
+	sf::RectangleShape cdScoreBoost;
+	sf::RectangleShape cdSpeed;
+	sf::RectangleShape cdStatus;
 };
 

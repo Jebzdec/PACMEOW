@@ -30,6 +30,7 @@ private:
 	float deltaTime = 0.0f;
 	sf::Clock clock;
 	sf::Music music;
+	int lose = 0;
 public:
 	Game();
 	~Game();

@@ -13,7 +13,6 @@ Food::Food()
 	texture[6].loadFromFile("picture/food/scoreBoost.png");
 	texture[7].loadFromFile("picture/food/poison.png");
 	texture[8].loadFromFile("picture/food/beer.png");
-
 	std::fill(countFood, countFood + 9, 0);
 	body.resize(FoodNumber);
 	for (int i = 0; i < FoodNumber; i++)

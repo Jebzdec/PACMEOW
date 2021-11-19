@@ -18,6 +18,7 @@ Player::Player(sf::Texture* texture, sf::Vector2u imageCount, float switchTime, 
 	body.setOrigin(bodyWidth / 2, bodyHigh);
 	body.setPosition(250.5, 315.5);//.5 center of block i j
 	body.setTexture(texture);
+	
 }
 
 Player::~Player()

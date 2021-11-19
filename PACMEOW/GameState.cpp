@@ -6,12 +6,13 @@ GameState::GameState(sf::View& view) {
 	background.setTexture(backgroundTexture);
 
 	std::srand(static_cast<unsigned>(time(NULL)));
+	path.clear();
 	if (!map.LoadFromFile("picture/Map1.tmx")) {}
 	if (!playerTexture.loadFromFile("picture/neko.png")) {}
 	if (!monsterTexture.loadFromFile("picture/monster.png")) {}
 	if (!font.loadFromFile("font/font2.ttf")) {}
-	this->player = new Player(&playerTexture, sf::Vector2u(3, 4), 0.3f, 60.f);
-	this->monster = new Monster(&monsterTexture, sf::Vector2u(3, 4), 10.f, 60.f);
+	this->player = new Player(&playerTexture, sf::Vector2u(3, 4), 0.3f, 50.f);
+	this->monster = new Monster(&monsterTexture, sf::Vector2u(3, 4), 35.f, startSpeedMonster);
 	this->emotion = new Emotion();
 	initHeart();
 	initScore();
@@ -23,12 +24,11 @@ GameState::GameState(sf::View& view) {
 	currentEmotion = -1;
 	score = 0;
 	checkScore = 0;
-	path.clear();
-
-	status.setSize(sf::Vector2f(1350.f, 10.f));
-	status.setOrigin(0, 0);
-	status.setFillColor(sf::Color::White);
-
+	if (!effItem.openFromFile("bgm/getitem.wav")) {}
+	if (!effHit.openFromFile("bgm/monsterHit.wav")) {}
+	if (!effBadItem.openFromFile("bgm/baditem.wav")) {}
+	if (!effDead.openFromFile("bgm/Pacman-death-sound.wav")) {}
+	initStatus();
 }
 
 GameState::~GameState()
@@ -56,10 +56,11 @@ void GameState::Update(sf::View& view)
 	else
 	{
 		view.setCenter(this->player->GetPosition());
-		UpdatePlayer(deltaTime, false);
-		UpdathHeart(view);
+		UpdateStatus();
 		UpdateFood();
 		UpdateMonster(deltaTime);
+		UpdatePlayer(deltaTime, false);
+		UpdathHeart(view);
 		//this->player->Update(deltaTime, false);
 		//this->food->Update();
 		//this->monster->Update(deltaTime, false);
@@ -69,9 +70,7 @@ void GameState::Update(sf::View& view)
 	{
 		UpdateEmotion(currentEmotion);
 	}
-	sf::Vector2f v = view.getSize();
-	status.setPosition(this->player->GetPosition().x - (v.x / 2), this->player->GetPosition().y - (v.y / 2));
-
+	
 }
 
 void GameState::Draw(sf::RenderWindow& window, sf::View& view)
@@ -79,11 +78,15 @@ void GameState::Draw(sf::RenderWindow& window, sf::View& view)
 	window.setView(view);
 	map.Draw(window);
 	this->food->Draw(window);
-	this->player->Draw(window);
 	this->monster->Draw(window);
+	this->player->Draw(window);
 	DrawScore(window, view);
 	DrawHeart(window);
 	//window.draw(status);
+	window.draw(cdStatus);
+	window.draw(cdSpeed);
+	if (scoreBoost == 2)
+		window.draw(cdScoreBoost);
 	if (currentEmotion != -1)
 	{
 		this->emotion->Draw(window, currentEmotion);
@@ -132,8 +135,11 @@ void GameState::UpdathHeart(sf::View& view)
 		}
 	}
 	else {
-		if (pause == 0)
+		if (pause == 0) {
+			effDead.stop();
+			effDead.play();
 			gameOver();
+		}
 	}
 }
 
@@ -149,6 +155,7 @@ void GameState::gameOver()
 {
 	pause = 2;
 	WriteFile();
+
 	//CurrentState = 4;
 }
 
@@ -217,9 +224,13 @@ void GameState::initScore()
 
 void GameState::DrawScore(sf::RenderWindow& window, sf::View& view)
 {
+	if(scoreBoost == 2)
+		textScore.setFillColor(sf::Color::Green);
+	else 
+		textScore.setFillColor(sf::Color::Red);
 	if (checkScore - score > 10000) {
 		checkScore = score;
-		this->monster->speed += 0.2;
+		this->monster->speed += 0.1;
 	}
 	sf::Vector2f v = view.getSize();
 	textScore.setString(std::to_string(score));
@@ -315,6 +326,7 @@ void GameState::UpdatePlayer(float deltaTime, bool press)
 {
 	if (this->player->speed != 60)
 	{
+
 		if (this->player->bonusSpeed == true)
 		{
 			countTimeSpeed.restart().asSeconds();
@@ -324,8 +336,28 @@ void GameState::UpdatePlayer(float deltaTime, bool press)
 		{
 			this->player->speed = 60;
 		}
+		if (!startCountTimeMonster)
+		{
+			if (this->player->speed > 60) {
+				cdSpeed.setFillColor(sf::Color::Color(56, 182, 255));
+				this->player->body.setFillColor(sf::Color::Color(56, 182, 255));
+			}
+			else if (this->player->speed < 60) {
+				cdSpeed.setFillColor(sf::Color::Color(255, 206, 109));
+				this->player->body.setFillColor(sf::Color::Color(255, 206, 109));
+			}
+			else
+				this->player->body.setFillColor(sf::Color::White);
+		}
+			float t = countTimeSpeed.getElapsedTime().asSeconds();
+			cdSpeed.setSize(sf::Vector2f(40 - (t * 4), 2));
+			cdSpeed.setOrigin(cdSpeed.getGlobalBounds().width, 0);
+			cdSpeed.setPosition(this->player->GetPosition().x+20 , this->player->GetPosition().y - 61);
+
+		
 
 	}
+	//this->player->body.setFillColor(sf::Color::Yellow);
 
 	sf::Vector2f movement(0.0f, 0.0f);
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) or sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
@@ -368,7 +400,7 @@ void GameState::UpdatePlayer(float deltaTime, bool press)
 	}
 	sf::Vector2f p = this->player->body.getPosition() + movement;
 	int X = (p.x - 0.5) / 16;
-	int Y = (p.y - 2) / 16;
+	int Y = (p.y - 1.8) / 16;
 	if (!solid[Y][X]) {
 		this->player->body.setTextureRect(this->player->animation.uvRect);
 		this->player->body.move(movement);
@@ -438,9 +470,10 @@ void GameState::UpdateMonster(float deltaTime)
 				---   <-y2
 
 			*/
-			if (countTimeMonster.getElapsedTime() >= sf::seconds(0.5))
+			if (countTimeMonster.getElapsedTime() >= sf::seconds(0.5) and startCountTimeMonster)
 			{
-				startCountTimeMonster = false;
+				startCountTimeMonster = false; 
+				this->player->body.setFillColor(sf::Color::White);
 			}
 			sf::Vector2f posPlayer = this->player->body.getPosition();
 			float RecX[4] = { posPlayer.x - 3, posPlayer.x + 3, posPlayer.x - 3, posPlayer.x + 3 };
@@ -450,10 +483,13 @@ void GameState::UpdateMonster(float deltaTime)
 				if (RecX[p] >= x1 and RecX[p] <= x2 and RecY[p] <= y2 and RecY[p] >= y1 and !startCountTimeMonster)
 				{
 					//std::cout << health << std::endl;
+					this->player->body.setFillColor(sf::Color::Color(228, 59, 68));//(250, 94, 103)
 					startCountTimeMonster = true;
 					countTimeMonster.restart().asSeconds();
 					health--;
 					currentEmotion = 2;
+					effHit.stop();
+					effHit.play();
 					break;
 				}
 			}
@@ -464,20 +500,31 @@ void GameState::UpdateMonster(float deltaTime)
 void GameState::UpdateFood()
 {
 	std::vector<int> Delete;
-	if (this->food->body.size()<=30)
+	if (this->food->body.size()<=50)
 	{
+		//std::cout << this->food->body.size() << std::endl;
 		NextLevel();
+		//std::cout << this->food->body.size()<<std::endl;
 	}
 	if (scoreBoost == 2) {
 		if (startScoreBoost == true)
 		{
-			countTimeSpeed.restart().asSeconds();
+			countTimeScore.restart().asSeconds();
 			startScoreBoost = false;
 		}
-		if (countTimeSpeed.getElapsedTime() >= sf::seconds(10))
+		if (countTimeScore.getElapsedTime() >= sf::seconds(10))
 		{
 			scoreBoost = 1;
 		}
+		else
+		{
+			float t = countTimeScore.getElapsedTime().asSeconds();
+			cdScoreBoost.setSize(sf::Vector2f(20-(t*2),2));
+			cdScoreBoost.setOrigin(cdScoreBoost.getGlobalBounds().width,0);
+			cdScoreBoost.setPosition(this->player->GetPosition().x+110, this->player->GetPosition().y-55);
+			cdScoreBoost.setFillColor(sf::Color::Green);
+		}
+
 	}
 	for (int i = 0; i < this->food->body.size(); i++)
 	{
@@ -533,17 +580,23 @@ void GameState::UpdateFood()
 				}
 				else if (this->food->CheckTexture(this->food->body[i], this->food->texture[4]))
 				{
+					effItem.stop();
+					effItem.play();
 					if (health + 1 <= 10) health++;
 					currentEmotion = 1;
 				}
 				else if (this->food->CheckTexture(this->food->body[i], this->food->texture[5]))
 				{
+					effItem.stop();
+					effItem.play();
 					this->player->speed = 100;
 					this->player->bonusSpeed = true;
 					currentEmotion = 3;
 				}
 				else if (this->food->CheckTexture(this->food->body[i], this->food->texture[6]))
 				{
+					effItem.stop();
+					effItem.play();
 					scoreBoost = 2;
 					startScoreBoost = true;
 					currentEmotion = 5;
@@ -554,6 +607,8 @@ void GameState::UpdateFood()
 				}
 				else if (this->food->CheckTexture(this->food->body[i], this->food->texture[8]))
 				{
+					effBadItem.stop();
+					effBadItem.play();
 					this->player->speed = 20;
 					this->player->bonusSpeed = true;
 					currentEmotion = 4;
@@ -578,11 +633,26 @@ void GameState::UpdateEmotion(int curEmo)
 	this->emotion->emotion[curEmo].setPosition(this->player->GetPosition().x - 5, this->player->GetPosition().y - 25);
 }
 
+void GameState::UpdateStatus()
+{
+	cdStatus.setPosition(this->player->GetPosition().x + 20, this->player->GetPosition().y - 61);
+}
+
+void GameState::initStatus()
+{
+	cdStatus.setSize(sf::Vector2f(40, 2));
+	cdStatus.setOrigin(cdStatus.getGlobalBounds().width, 0);
+	cdStatus.setOutlineColor(sf::Color::Black);
+	cdStatus.setOutlineThickness(0.5);
+	cdStatus.setFillColor(sf::Color::Transparent);
+}
+
 void GameState::NextLevel()
 {
 	//this->monster = new Monster(&monsterTexture, sf::Vector2u(3, 4), 10.f, 70.f);
 	//path.clear();
-	this->monster->speed += 10;
+	startSpeedMonster += 10;
+	this->monster->speed = startSpeedMonster;
 	this->food = new Food();
 }
 

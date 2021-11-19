@@ -1,7 +1,7 @@
 #include "Game.h"
 Game::Game()
 {
-    window.create(sf::VideoMode(VIEW_WIDTH, VIEW_HEIGH), "SFML works!",sf::Style::Fullscreen );//,
+    window.create(sf::VideoMode(VIEW_WIDTH, VIEW_HEIGH), "SFML works!" );//,,sf::Style::Fullscreen
     view1.setCenter(sf::Vector2f(0.0f, 0.0f));
     view1.setSize(sf::Vector2f(VIEW_WIDTH, VIEW_HEIGH));
 
@@ -25,6 +25,7 @@ Game::~Game()
 }
 void Game::NewGame()
 {
+    lose = 0;
     this->inputNameState = new InputNameState(view1);
     this->gameState = new GameState(view2);
     deltaTime = 0.0f;
@@ -40,6 +41,7 @@ void Game::NewGame()
 }
 void Game::RestartGame()
 {
+    lose = 0;
     this->gameState = new GameState(view2);
     deltaTime = 0.0f;
 }
@@ -125,7 +127,7 @@ void Game::UpdateGame()
         this->gameState->Update(view2);
         break;
     case 4:
-        this->gameOver->Update(view1);
+        this->gameOver->Update(view1, this->gameState->score);
         break;
     case 5:
         this->leaderboard->Update(view1);
@@ -152,6 +154,11 @@ void Game::RenderGame()
         this->gameState->Draw(window, view2);
         break;
     case 4:
+        if (lose == 0)
+        {
+            this->gameOver->effLose.play();
+            lose = 1;
+        }
         //view1.setCenter(VIEW_WIDTH / 2, VIEW_HEIGH / 2);
         this->gameOver->Draw(window, view1);
         break;
@@ -171,7 +178,7 @@ void Game::ResizeView(const sf::RenderWindow& window, sf::View& view, int zoom)
     //std::cout << window.getSize().x << " " << float(window.getSize().y) <<std::endl;
     //std::cout << view.getSize().x << " " << view.getSize().y << std::endl;
     double aspectRatio = float(window.getSize().x / float(window.getSize().y));
-    view.setSize(VIEW_WIDTH * aspectRatio / zoom, VIEW_HEIGH / zoom);
+    view.setSize(VIEW_WIDTH / zoom, VIEW_HEIGH / zoom);
 
     //std::cout << view.getSize().x << " " << view.getSize().y << std::endl;
 }
