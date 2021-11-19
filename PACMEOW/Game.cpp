@@ -1,7 +1,7 @@
 #include "Game.h"
 Game::Game()
 {
-    window.create(sf::VideoMode(VIEW_WIDTH, VIEW_HEIGH), "SFML works!" );//,,sf::Style::Fullscreen
+    window.create(sf::VideoMode(VIEW_WIDTH, VIEW_HEIGH), "PACMEOW");//,,sf::Style::Fullscreen 
     view1.setCenter(sf::Vector2f(0.0f, 0.0f));
     view1.setSize(sf::Vector2f(VIEW_WIDTH, VIEW_HEIGH));
 

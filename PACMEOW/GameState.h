@@ -90,7 +90,7 @@ private:
 	int scoreBoost = 1;
 	int health;
 	int currentEmotion;
-	float startSpeedMonster = 20;
+	float startSpeedMonster = 30;
 
 	//sf::RectangleShape taskbar;
 	sf::Music effHit;
